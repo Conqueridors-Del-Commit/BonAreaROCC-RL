@@ -11,8 +11,7 @@ class ConvolutionalObservationManager:
     def get_observation_space(self):
         return Dict({
             'position': Discrete(self.num_cells),
-            'time_per_step': Box(low=0, high=math.inf, shape=(1,)),  # TODO: check this
-            'time_per_pick': Box(low=0, high=math.inf, shape=(1,)),
+            'time_per_step': Box(low=0, high=math.inf, shape=(1,)),
             'cells': Box(low=0, high=math.inf, shape=(self.num_cells,))
         })
 
@@ -22,6 +21,5 @@ class ConvolutionalObservationManager:
         return {
             'position': position_y * width + position_x,
             'time_per_step': time_per_step,
-            'time_per_pick': time_per_pick,
             'cells': cells
         }

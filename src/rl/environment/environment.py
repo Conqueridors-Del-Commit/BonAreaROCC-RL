@@ -1,14 +1,13 @@
 import copy
 
-from code.rl.environment.observation_manager import ConvolutionalObservationManager
-from code.rl.environment.reward_manager import RewardManager
+from src.rl.environment.observation_manager import ConvolutionalObservationManager
+from src.rl.environment.reward_manager import RewardManager
 
 import gymnasium as gym
 import pandas as pd
 import numpy as np
 import json
 from gymnasium.spaces import Discrete
-
 
 class Environment(gym.Env):
     def __init__(self, obs_manager, reward_manager, picking_positions, ticket_items, planogram_csv_path,
@@ -36,44 +35,38 @@ class Environment(gym.Env):
         self.reset()
 
     def reset(self):
+        # set the start position
         self.customer_pos_x = 28
         self.customer_pos_y = 19
+        # set the current time_per_step, and time_per_pick
         self.time_per_step, self.time_per_pick = self._get_customer_properties(self.customer_properties_df)
+        # set start map situation from base map
         self.map = np.copy(self.base_map)
         self.pending_items = copy.deepcopy(self.ticket_items)
+        # fill the articles to peek in the map
         for item in self.ticket_items.keys():
             pos_x, pos_y = self.picking_positions[item]
             self.map[pos_y, pos_x] = self.article_grouping[item] + 4
-
+        # get current observation
         observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
                                                                self.time_per_step, self.time_per_pick, self.map)
         return observation, {}
 
     def step(self, action):
+        # update the enviroment in function of the action
         if action == 0:
-            for article, position in self.picking_positions.items():
-                if (position[0]) == self.customer_pos_x and (position[1]) == self.customer_pos_y:
-                    # level 1 optimal get all units
-                    self.pending_items.pop(article)
-                    self.map[self.customer_pos_y, self.customer_pos_x] = 0
-
-            observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
-                                                                   self.time_per_step, self.time_per_pick, self.map)
-
-            reward = self.reward_manager.compute_reward(action, self.time_per_pick, self.time_per_step, self.pending_items)
-
-            return observation, reward, False, False, {}
+            self._pick_action()
         else:
             # move agent
-            self.customer_pos_x += self.action_map[action][0]
-            self.customer_pos_y += self.action_map[action][1]
-
-            done = self.map[self.customer_pos_y, self.customer_pos_x] == 2
-
-            observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
-                                                                   self.time_per_step, self.time_per_pick, self.map)
-            reward = self.reward_manager.compute_reward(action, self.time_per_pick, self.time_per_step, self.pending_items)
-            return observation, reward, done, done, {}
+            self.customer_pos_x, self.customer_pos_y = self._movement_action(action)
+        # generate the new observation
+        observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
+                                                               self.time_per_step, self.time_per_pick, self.map)
+        # compute the reward
+        reward = self.reward_manager.compute_reward(action, self.time_per_pick, self.time_per_step, self.pending_items)
+        # check if is the end of the episode
+        done = self.map[self.customer_pos_y, self.customer_pos_x] == 2
+        return observation, reward, done, done, {}
 
     def _build_map(self, planogram_csv_path: str):
         """
@@ -85,16 +78,29 @@ class Environment(gym.Env):
         height = planogram_df['y'].max()
         src_map = np.zeros(shape=(height, width))
         cell_type_dict = {"paso": 0, "paso-entrada": 2, "paso-salida": 3}
+        # fill the map with the fixed elements
         for idx, row in planogram_df.iterrows():
             cell_item = row["description"]
             x = row["x"] - 1
             y = row["y"] - 1
+            # choice the value of the cell in function of the type
             if cell_item in cell_type_dict:
                 src_map[y, x] = cell_type_dict[cell_item]
             else:
                 src_map[y, x] = 1
-
         return src_map
+
+    def _movement_action(self, action):
+        customer_pos_x = self.customer_pos_x + self.action_map[action][0]
+        customer_pos_y = self.customer_pos_y + self.action_map[action][1]
+        return customer_pos_x, customer_pos_y
+
+    def _pick_action(self):
+        for article, position in self.picking_positions.items():
+            if (position[0]) == self.customer_pos_x and (position[1]) == self.customer_pos_y:
+                # level 1 optimal get all units in one step
+                self.pending_items.pop(article)
+                self.map[self.customer_pos_y, self.customer_pos_x] = 0
 
     def _get_customer_properties(self, customer_properties):
         sample = customer_properties.sample(1)
@@ -119,16 +125,17 @@ class EnvironmentBuilder:
         self.grouping_map = self._load_article_grouping(grouping_path)
 
     def build(self):
+        # build the observation generator
         if self.obs_mode == 1:
             obs_manager = ConvolutionalObservationManager(self.num_cells)
         else:
             raise NotImplementedError
-
-        if self.reward_mode:
+        # build the reward function utility
+        if self.reward_mode == 1:
             reward_manager = RewardManager()
         else:
             raise NotImplementedError
-
+        # build enviroment
         return Environment(obs_manager=obs_manager, reward_manager=reward_manager,
                            picking_positions=self.picking_positions, ticket_items=self.ticket_items,
                            planogram_csv_path=self.planogram_csv_path,
@@ -179,6 +186,6 @@ if __name__ == "__main__":
     env.step(3)
     env.step(3)
     env.step(3)
-    #env.step(0)
+    env.step(0)
 
     env.render()
