@@ -43,7 +43,7 @@ class Environment(gym.Env):
         self.pending_items = copy.deepcopy(self.ticket_items)
         for item in self.ticket_items.keys():
             pos_x, pos_y = self.picking_positions[item]
-            self.map[pos_y - 1, pos_x - 1] = self.article_grouping[item] + 4
+            self.map[pos_y, pos_x] = self.article_grouping[item] + 4
 
         observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
                                                                self.time_per_step, self.time_per_pick, self.map)
@@ -52,9 +52,8 @@ class Environment(gym.Env):
     def step(self, action):
         if action == 0:
             for article, position in self.picking_positions.items():
-                if (position[0] - 1) == self.customer_pos_x and (position[1] - 1) == self.customer_pos_y:
-                    #self.pending_items[article] -= 1
-                    #if self.pending_items[article] == 0:
+                if (position[0]) == self.customer_pos_x and (position[1]) == self.customer_pos_y:
+                    # level 1 optimal get all units
                     self.pending_items.pop(article)
                     self.map[self.customer_pos_y, self.customer_pos_x] = 0
 
@@ -150,7 +149,7 @@ class EnvironmentBuilder:
         final_picking_positions = {}
         for pos in picking_positions:
             final_picking_positions[products['description'][pos]] = (
-                int(products['picking_x'][pos]), int(products['picking_y'][pos]))
+                int(products['picking_x'][pos]) - 1, int(products['picking_y'][pos]) - 1)
         return final_picking_positions
 
     def _load_ticket(self, ticket_path: str):
@@ -180,6 +179,6 @@ if __name__ == "__main__":
     env.step(3)
     env.step(3)
     env.step(3)
-    env.step(0)
+    #env.step(0)
 
     env.render()
