@@ -1,3 +1,5 @@
+import copy
+
 from code.rl.environment.observation_manager import ConvolutionalObservationManager
 from code.rl.environment.reward_manager import RewardManager
 
@@ -20,22 +22,48 @@ class Environment(gym.Env):
         self.customer_properties_df = pd.read_csv(customer_properties_csv, delimiter=';')
         self.article_grouping = article_grouping_map
 
+        # TODO: action mask
         self.observation_space = self.observation_manager.get_observation_space()
         self.action_space = Discrete(5)
+
+        self.action_map = {
+            1: (0, -1), # UP
+            2: (0, 1), # DOWN
+            3: (-1, 0), # LEFT
+            4: (1, 0) # RIGHT
+        }
 
         self.reset()
 
     def reset(self):
+        self.customer_pos_x = 28
+        self.customer_pos_y = 19
         self.time_per_step, self.time_per_pick = self._get_customer_properties(self.customer_properties_df)
         self.map = np.copy(self.base_map)
+        self.pending_items = copy.deepcopy(self.ticket_items)
         for item in self.ticket_items.keys():
             pos_x, pos_y = self.picking_positions[item]
-            self.map[int(pos_y) - 1, int(pos_x) - 1] = self.article_grouping[item] + 4
+            self.map[pos_y - 1, pos_x - 1] = self.article_grouping[item] + 4
 
         return map, {}
 
     def step(self, action):
-        return self.env.step(action)
+        if action == 0:
+            for article, position in self.picking_positions.items():
+                if (position[0] - 1) == self.customer_pos_x and (position[1] - 1) == self.customer_pos_y:
+                    self.pending_items[article] -= 1
+                    if self.pending_items[article] == 0:
+                        self.map[self.customer_pos_y, self.customer_pos_x] = 0
+
+            return self.map, 0, False, False, {}
+        else:
+            # move agent
+            self.customer_pos_x += self.action_map[action][0]
+            self.customer_pos_y += self.action_map[action][1]
+
+            done = self.map[self.customer_pos_y, self.customer_pos_x] == 2
+
+            return self.map, 0, done, done, {}
 
     def _build_map(self, planogram_csv_path: str):
         """
@@ -63,7 +91,10 @@ class Environment(gym.Env):
         return sample["step_seconds"], sample["picking_offset"]
 
     def render(self):
-        raise NotImplementedError
+        for row in self.map:
+            for cell in row:
+                print(cell, end=' ')
+            print()
 
 
 class EnvironmentBuilder:
@@ -108,7 +139,7 @@ class EnvironmentBuilder:
         final_picking_positions = {}
         for pos in picking_positions:
             final_picking_positions[products['description'][pos]] = (
-                products['picking_x'][pos], products['picking_y'][pos])
+                int(products['picking_x'][pos]), int(products['picking_y'][pos]))
         return final_picking_positions
 
     def _load_ticket(self, ticket_path: str):
@@ -132,4 +163,15 @@ if __name__ == "__main__":
         obs_mode=1,
         reward_mode=1).build()
 
-    print(env.map)
+    env.step(1)
+    env.step(1)
+
+    env.step(3)
+    env.step(3)
+    env.step(3)
+    env.step(0)
+
+    env.render()
+
+
+
