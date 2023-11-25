@@ -53,14 +53,17 @@ class Environment(gym.Env):
         if action == 0:
             for article, position in self.picking_positions.items():
                 if (position[0] - 1) == self.customer_pos_x and (position[1] - 1) == self.customer_pos_y:
-                    self.pending_items[article] -= 1
-                    if self.pending_items[article] == 0:
-                        self.map[self.customer_pos_y, self.customer_pos_x] = 0
+                    #self.pending_items[article] -= 1
+                    #if self.pending_items[article] == 0:
+                    self.pending_items.pop(article)
+                    self.map[self.customer_pos_y, self.customer_pos_x] = 0
 
             observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
                                                                    self.time_per_step, self.time_per_pick, self.map)
 
-            return observation, 0, False, False, {}
+            reward = self.reward_manager.compute_reward(action, self.time_per_pick, self.time_per_step, self.pending_items)
+
+            return observation, reward, False, False, {}
         else:
             # move agent
             self.customer_pos_x += self.action_map[action][0]
@@ -70,7 +73,8 @@ class Environment(gym.Env):
 
             observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
                                                                    self.time_per_step, self.time_per_pick, self.map)
-            return observation, 0, done, done, {}
+            reward = self.reward_manager.compute_reward(action, self.time_per_pick, self.time_per_step, self.pending_items)
+            return observation, reward, done, done, {}
 
     def _build_map(self, planogram_csv_path: str):
         """
