@@ -27,10 +27,10 @@ class Environment(gym.Env):
         self.action_space = Discrete(5)
 
         self.action_map = {
-            1: (0, -1), # UP
-            2: (0, 1), # DOWN
-            3: (-1, 0), # LEFT
-            4: (1, 0) # RIGHT
+            1: (0, -1),  # UP
+            2: (0, 1),  # DOWN
+            3: (-1, 0),  # LEFT
+            4: (1, 0)  # RIGHT
         }
 
         self.reset()
@@ -45,7 +45,9 @@ class Environment(gym.Env):
             pos_x, pos_y = self.picking_positions[item]
             self.map[pos_y - 1, pos_x - 1] = self.article_grouping[item] + 4
 
-        return map, {}
+        observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
+                                                               self.time_per_step, self.time_per_pick, self.map)
+        return observation, {}
 
     def step(self, action):
         if action == 0:
@@ -55,7 +57,10 @@ class Environment(gym.Env):
                     if self.pending_items[article] == 0:
                         self.map[self.customer_pos_y, self.customer_pos_x] = 0
 
-            return self.map, 0, False, False, {}
+            observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
+                                                                   self.time_per_step, self.time_per_pick, self.map)
+
+            return observation, 0, False, False, {}
         else:
             # move agent
             self.customer_pos_x += self.action_map[action][0]
@@ -63,7 +68,9 @@ class Environment(gym.Env):
 
             done = self.map[self.customer_pos_y, self.customer_pos_x] == 2
 
-            return self.map, 0, done, done, {}
+            observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
+                                                                   self.time_per_step, self.time_per_pick, self.map)
+            return observation, 0, done, done, {}
 
     def _build_map(self, planogram_csv_path: str):
         """
@@ -172,6 +179,3 @@ if __name__ == "__main__":
     env.step(0)
 
     env.render()
-
-
-
