@@ -37,7 +37,7 @@ class CsvCreator:
 
         with open(self.path, 'w+', newline='') as csvfile:
             fieldnames = ['customer_id', 'ticket_id', 'x', 'y', 'picking', 'x_y_date_time']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=';')
             writer.writeheader()
             new_x, new_y = 29, 20
             for i in range(self.customer_properties.step_seconds):

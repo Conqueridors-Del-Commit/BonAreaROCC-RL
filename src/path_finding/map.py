@@ -9,6 +9,7 @@ class Map:
     def __init__(self, map_file):
         self.map_file = map_file
         self.planogram_df = pd.read_csv(self.map_file, delimiter=';')
+        self.exits = []
         self.map = self.load_map()
         self.map_width = self.map.shape[0]
         self.map_height = self.map.shape[1]
@@ -23,6 +24,8 @@ class Map:
             x = row["x"] - 1
             y = row["y"] - 1
             if cell_item in cell_type_dict:
+                if cell_item == "paso-salida":
+                    self.exits.append((y, x))
                 src_map[y, x] = CORRIDOR
             else:
                 src_map[y, x] = OBSTACLE
