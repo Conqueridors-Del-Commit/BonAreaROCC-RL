@@ -47,7 +47,7 @@ def find_path(ticket_csv_path):
     print(final_solution)
     print("Time: ", time.time() - before)
     ticket_id = big_problem.ticket.ticket_id
-    creator = CsvCreatorBuilder(result_path=f'data/results/{ticket_id}_result.csv', solution=final_solution).build()
+    creator = CsvCreatorBuilder(result_path=f'data/results/{ticket_id}_result.csv', solution=final_solution, ticket_id=ticket_id).build()
     creator.create_csv()
 
 

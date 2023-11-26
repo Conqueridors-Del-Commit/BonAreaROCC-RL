@@ -43,7 +43,8 @@ class CsvCreator:
             for i in range(self.customer_properties.step_seconds):
                 writer.writerow(
                     {'customer_id': self.ticket.customer_id, 'ticket_id': self.ticket.ticket_id, 'x': new_x, 'y': new_y,
-                     'picking': 0, 'x_y_date_time': init_time.strftime('%Y-%m-%d %H:%M:%S')})
+                     'picking': 0, 'x_y_date_time': current_time.strftime('%Y-%m-%d %H:%M:%S')})
+                current_time = current_time + timedelta(seconds=1)
 
             for action in self.solution:
                 new_x, new_y = apply_action((new_x, new_y), action)
@@ -80,13 +81,14 @@ class CsvCreator:
 
 class CsvCreatorBuilder:
 
-    def __init__(self, result_path, solution):
+    def __init__(self, result_path, solution, ticket_id):
         self.result_path = result_path
         self.solution = solution
+        self.ticket_id = ticket_id
 
     def build(self):
         supermarket_map = Map(map_file='data/data/planogram_table.csv')
-        ticket = Ticket(ticket_file='data/data/test_ticket.csv')
+        ticket = Ticket(ticket_file=f'data/data/tickets/{self.ticket_id}.csv')
         customer_properties = CustomerProperties(customer_file_csv='data/data/hackathon_customers_properties.csv',
                                                  customer_id=ticket.customer_id)
         picking_times = PickingTimes(picking_times_csv='data/data/hackathon_article_picking_time.csv')
