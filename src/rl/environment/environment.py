@@ -15,7 +15,7 @@ class Environment(gym.Env):
         self.observation_manager = obs_manager
         self.reward_manager = reward_manager
 
-        self.picking_positions = picking_positions
+        self._picking_positions = picking_positions
         self.ticket_items = ticket_items
         self.base_map = self._build_map(planogram_csv_path)
         self.customer_properties_df = pd.read_csv(customer_properties_csv, delimiter=';')
@@ -34,7 +34,7 @@ class Environment(gym.Env):
 
         self.reset()
 
-    def reset(self):
+    def reset(self, seed=None):
         # set the start position
         self.customer_pos_x = 28
         self.customer_pos_y = 19
@@ -44,6 +44,7 @@ class Environment(gym.Env):
         self.map = np.copy(self.base_map)
         self.pending_items = copy.deepcopy(self.ticket_items)
         # fill the articles to peek in the map
+        self.picking_positions = copy.deepcopy(self._picking_positions)
         for item in self.ticket_items.keys():
             pos_x, pos_y = self.picking_positions[item]
             self.map[pos_y, pos_x] = self.article_grouping[item] + 4
@@ -55,7 +56,12 @@ class Environment(gym.Env):
     def step(self, action):
         # update the enviroment in function of the action
         if action == 0:
-            self._pick_action()
+            article = self._pick_action()
+            if article:
+                # level 1 optimal get all units in one step
+                self.pending_items.pop(article)
+                self.picking_positions.pop(article)
+                self.map[self.customer_pos_y, self.customer_pos_x] = 0
         else:
             # move agent
             self.customer_pos_x, self.customer_pos_y = self._movement_action(action)
@@ -96,21 +102,36 @@ class Environment(gym.Env):
         return customer_pos_x, customer_pos_y
 
     def _pick_action(self):
+        article_pick = None
         for article, position in self.picking_positions.items():
             if (position[0]) == self.customer_pos_x and (position[1]) == self.customer_pos_y:
-                # level 1 optimal get all units in one step
-                self.pending_items.pop(article)
-                self.map[self.customer_pos_y, self.customer_pos_x] = 0
+                article_pick = article
+                break
+        if article_pick:
+            return article_pick if article_pick in self.pending_items else None
 
     def _get_customer_properties(self, customer_properties):
         sample = customer_properties.sample(1)
-        return sample["step_seconds"], sample["picking_offset"]
+        return sample["step_seconds"].item(), sample["picking_offset"].item()
 
     def render(self):
         for row in self.map:
             for cell in row:
                 print(cell, end=' ')
             print()
+
+    def get_valid_actions(self):
+        valid_actions = [True] if self._pick_action() else [False]
+        for action in self.action_map.keys():
+            nex_x, nex_y = self._movement_action(action)
+            if nex_x < 0 or nex_x >= self.base_map.shape[1]:
+                valid_actions.append(False)
+                continue
+            if nex_y < 0 or nex_y >= self.base_map.shape[0]:
+                valid_actions.append(False)
+                continue
+            valid_actions.append(True)
+        return valid_actions
 
 
 class EnvironmentBuilder:

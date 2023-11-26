@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -54,11 +56,29 @@ class CNNFeatures(BaseFeaturesExtractor):
         # pass the concatenation output to a full connected layer
         output = self.fc_combined(combined_features)
 
-        # apply masking
-        if self.mask_function:
-            mask = self.mask_function(obs)
-            output = output * mask
         return output, None
+
+class CustomDQN(DQN):
+    def __init__(self, *args, mask_function=None, **kwargs):
+        super(CustomDQN, self).__init__(*args, **kwargs)
+        self.mask_function = mask_function
+
+    def _sample_action(self, learning_starts, action_noise, n_envs=1):
+        # Select action randomly or according to policy
+        if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
+            # Warmup phase
+            valid_actions = self.mask_function()
+            valid_actions = [i for i in range(self.action_space.n) if valid_actions[i]]
+            unscaled_action = np.array([random.choice(valid_actions) for _ in range(n_envs)])
+        else:
+            # Note: when using continuous actions,
+            # we assume that the policy uses tanh to scale the action
+            # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+            assert self._last_obs is not None, "self._last_obs was not set"
+            unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
+        buffer_action = unscaled_action
+        action = buffer_action
+        return action, buffer_action
 
 
 if __name__ == '__main__':
@@ -69,14 +89,16 @@ if __name__ == '__main__':
         grouping_path='data/data/article_group.json',
         obs_mode=1,
         reward_mode=1).build()
-    model = DQN(
+    model = CustomDQN(
         CNNFeaturesPolicy,
         env,
         verbose=1,
+        mask_function=env.get_valid_actions,
         policy_kwargs=dict(
            features_extractor_kwargs=dict(
                 ac_space=env.action_space,
-                mask_function=None
             )
         )
     )
+
+    model.learn(total_timesteps=10000, log_interval=4)
