@@ -1,4 +1,5 @@
 import heapq
+import pandas as pd
 
 
 class PriorityQueue:
@@ -95,3 +96,18 @@ def manhattan_distance(state, goal_state):
     x1, y1 = state
     x2, y2 = goal_state
     return abs(x1 - x2) + abs(y1 - y2)
+
+
+def separate_tickets_into_different_csv_files():
+    """
+    Separate tickets into different csv files
+    """
+    all_tickets = pd.read_csv('data/data/hackathon_tickets.csv', delimiter=';')
+    ticket_ids = all_tickets['ticket_id'].unique()
+    for ticket_id in ticket_ids:
+        ticket = all_tickets[all_tickets['ticket_id'] == ticket_id]
+        ticket.to_csv(f'data/data/tickets/{ticket_id}.csv', index=False)
+
+
+if __name__ == "__main__":
+    separate_tickets_into_different_csv_files()

@@ -9,13 +9,14 @@ def myHeuristic(state, problem=None):
     A heuristic function estimates the cost from the current state to the nearest
     goal in the provided SearchProblem.  This heuristic is trivial.
     """
-    ticket_items = problem.ticket_positions
+    """ticket_items = problem.ticket_positions
     min_distance = math.inf
     for item in ticket_items:
         distance = util.manhattan_distance(state[0], item)
         if distance < min_distance:
             min_distance = distance
-    return min_distance
+    return min_distance"""
+    return 0
 
 
 def aStarSearch(problem, heuristic=myHeuristic):

@@ -96,6 +96,8 @@ class Level1Problem:
     def __init__(self, map, ticket):
         # Map with corridors and walls
         self.map = map
+        # ticket
+        self.ticket = ticket
         # List of items to be picked in the ticket
         self.ticket_positions = self._get_item_positions(ticket)
         # Start state
@@ -116,7 +118,7 @@ class Level1Problem:
         return item_positions
 
     def get_start_state(self):
-        return self.start_pos, tuple(pos for pos in self.ticket_positions[:8])
+        return self.start_pos, tuple(pos for pos in self.ticket_positions[:7])
 
     def is_goal_state(self, state: Node):
         position, remaining_items = state
@@ -143,6 +145,53 @@ class Level1ProblemBuilder:
         supermarket_map = Map(map_file='data/data/planogram_table.csv')
         ticket = Ticket(ticket_file='data/data/test_ticket.csv')
         return Level1Problem(map=supermarket_map, ticket=ticket)
+
+
+class Level1MiniProblem:
+    def __init__(self, map, start_pos, final_pos):
+        # Map with corridors and walls
+        self.map = map
+        # Start state
+        self.start_pos = start_pos
+        # Final state
+        self.final_pos = final_pos
+        # Actions dictionary
+        self.actions = {
+            'N': Directions.NORTH,
+            'S': Directions.SOUTH,
+            'E': Directions.EAST,
+            'W': Directions.WEST,
+        }
+
+    def get_start_state(self):
+        return self.start_pos
+
+    def is_goal_state(self, state: Node):
+        return self.final_pos == state
+
+    def get_successors(self, state):
+        successors = []
+        for action in self.actions.keys():
+            x, y = state
+            dx, dy = self.actions[action]
+            new_x = x + dx
+            new_y = y + dy
+            if 0 <= new_x < self.map.map_width and 0 <= new_y < self.map.map_height:
+                if not self.map.is_obstacle(new_x, new_y):
+                    successors.append(((new_x, new_y), action, 1))
+
+        return successors
+
+
+class Level1MiniProblemBuilder:
+    def __init__(self, initial_pos, final_pos):
+        self.initial_pos = initial_pos
+        self.final_pos = final_pos
+
+    def build(self):
+        supermarket_map = Map(map_file='data/data/planogram_table.csv')
+        return Level1MiniProblem(map=supermarket_map, start_pos=self.initial_pos,
+                                 final_pos=self.final_pos)
 
 
 if __name__ == "__main__":
