@@ -1,4 +1,3 @@
-
 class Node:
     def __init__(self, _state, _parent=None, _action=None, _cost=0):
         self.state = _state

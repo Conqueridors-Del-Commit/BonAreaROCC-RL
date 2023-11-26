@@ -86,3 +86,12 @@ class NodePriorityQueueWithFunction(PriorityQueueWithFunction):
                 break
         else:
             self.push(item)
+
+
+def manhattan_distance(state, goal_state):
+    """
+    Manhattan distance heuristic
+    """
+    x1, y1 = state
+    x2, y2 = goal_state
+    return abs(x1 - x2) + abs(y1 - y2)

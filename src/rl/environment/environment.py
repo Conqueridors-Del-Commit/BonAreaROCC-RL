@@ -1,7 +1,7 @@
 import copy
 
-from code.rl.environment.observation_manager import ConvolutionalObservationManager
-from code.rl.environment.reward_manager import RewardManager
+from src.rl.environment.observation_manager import ConvolutionalObservationManager
+from src.rl.environment.reward_manager import RewardManager
 
 import gymnasium as gym
 import pandas as pd
