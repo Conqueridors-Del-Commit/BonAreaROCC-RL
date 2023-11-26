@@ -1,13 +1,14 @@
 import copy
 
-from src.rl.environment.observation_manager import ConvolutionalObservationManager
+from src.rl.environment.observation_manager import ConvolutionalObservationManager, ObservationManager
 from src.rl.environment.reward_manager import RewardManager
 
-import gymnasium as gym
+import gym
+import tensorflow as tf
 import pandas as pd
 import numpy as np
 import json
-from gymnasium.spaces import Discrete
+from gym.spaces import Discrete
 
 class Environment(gym.Env):
     def __init__(self, obs_manager, reward_manager, picking_positions, ticket_items, planogram_csv_path,
@@ -51,7 +52,7 @@ class Environment(gym.Env):
         # get current observation
         observation = self.observation_manager.get_observation(self.customer_pos_x, self.customer_pos_y,
                                                                self.time_per_step, self.time_per_pick, self.map)
-        return observation, {}
+        return observation
 
     def step(self, action):
         # update the enviroment in function of the action
@@ -71,8 +72,8 @@ class Environment(gym.Env):
         # compute the reward
         reward = self.reward_manager.compute_reward(action, self.time_per_pick, self.time_per_step, self.pending_items)
         # check if is the end of the episode
-        done = self.map[self.customer_pos_y, self.customer_pos_x] == 2
-        return observation, reward, done, done, {}
+        done = (self.map[self.customer_pos_y, self.customer_pos_x] == 2)
+        return observation, reward, done, {}
 
     def _build_map(self, planogram_csv_path: str):
         """
@@ -120,7 +121,7 @@ class Environment(gym.Env):
                 print(cell, end=' ')
             print()
 
-    def get_valid_actions(self):
+    def get_valid_actions(self, **kargs):
         valid_actions = [True] if self._pick_action() else [False]
         for action in self.action_map.keys():
             nex_x, nex_y = self._movement_action(action)
@@ -131,7 +132,21 @@ class Environment(gym.Env):
                 valid_actions.append(False)
                 continue
             valid_actions.append(True)
+        valid_actions = [i for i in range(5) if valid_actions[i]]
         return valid_actions
+
+    def observation_and_action_constrain_splitter(self, observation):
+        action_mask = [1] if self._pick_action() else [0]
+        for action in self.action_map.keys():
+            nex_x, nex_y = self._movement_action(action)
+            if nex_x < 0 or nex_x >= self.base_map.shape[1]:
+                action_mask.append(False)
+                continue
+            if nex_y < 0 or nex_y >= self.base_map.shape[0]:
+                action_mask.append(False)
+                continue
+            action_mask.append(1)
+        return observation,  tf.convert_to_tensor(action_mask, dtype=np.int32)
 
 
 class EnvironmentBuilder:
@@ -150,7 +165,7 @@ class EnvironmentBuilder:
         if self.obs_mode == 1:
             obs_manager = ConvolutionalObservationManager(self.num_cells)
         else:
-            raise NotImplementedError
+            obs_manager = ObservationManager()
         # build the reward function utility
         if self.reward_mode == 1:
             reward_manager = RewardManager()

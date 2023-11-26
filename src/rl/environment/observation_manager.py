@@ -1,7 +1,7 @@
 import math
 
 import numpy as np
-from gymnasium.spaces import Box, Discrete, Dict
+from gym.spaces import Box, Discrete, Dict
 
 
 class ConvolutionalObservationManager:
@@ -11,7 +11,7 @@ class ConvolutionalObservationManager:
 
     def get_observation_space(self):
         return Dict({
-            'position': Discrete(self.num_cells),
+            # 'position': Discrete(self.num_cells),
             'time_per_step': Box(low=0, high=math.inf, shape=(1,)),
             'cells': Box(low=0, high=math.inf, shape=self.cell_shape)
         })
@@ -20,7 +20,22 @@ class ConvolutionalObservationManager:
                         cells: np.ndarray):
         width = cells.shape[1]
         return {
-            'position': position_y * width + position_x,
+            # 'position': position_y * width + position_x,
+            # 'position':10,
             'time_per_step': time_per_step,
             'cells': cells
         }
+
+class ObservationManager:
+
+    def get_observation_space(self):
+        return Box(0, np.inf, shape=(940,))
+
+    def get_observation(self, position_x: int, position_y: int, time_per_step: float, time_per_pick: float,
+                        cells: np.ndarray):
+        width = cells.shape[1]
+        position = position_y * width + position_x
+        time_per_step: time_per_step
+        #obs = np.concatenate([cells.reshape(-1), [position, time_per_step]], dtype=np.float32)
+        obs = cells.reshape(-1)
+        return obs
