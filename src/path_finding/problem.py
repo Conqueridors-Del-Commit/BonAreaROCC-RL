@@ -141,9 +141,12 @@ class Level1Problem:
 
 
 class Level1ProblemBuilder:
+    def __init__(self, ticket_file_path):
+        self.ticket_file_path = ticket_file_path
+
     def build(self):
         supermarket_map = Map(map_file='data/data/planogram_table.csv')
-        ticket = Ticket(ticket_file='data/data/test_ticket.csv')
+        ticket = Ticket(ticket_file=f'data/data/tickets/{self.ticket_file_path}')
         return Level1Problem(map=supermarket_map, ticket=ticket)
 
 

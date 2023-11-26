@@ -106,7 +106,9 @@ def separate_tickets_into_different_csv_files():
     ticket_ids = all_tickets['ticket_id'].unique()
     for ticket_id in ticket_ids:
         ticket = all_tickets[all_tickets['ticket_id'] == ticket_id]
-        ticket.to_csv(f'data/data/tickets/{ticket_id}.csv', index=False)
+        ticket = ticket.set_index('enter_date_time')
+        ticket.index = pd.to_datetime(ticket.index)
+        ticket.to_csv(f'data/data/tickets/{ticket_id}.csv', index=True, sep=';')
 
 
 if __name__ == "__main__":

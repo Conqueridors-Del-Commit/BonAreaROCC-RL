@@ -1,6 +1,7 @@
 from src.path_finding.problem import Level1MiniProblemBuilder, Level1ProblemBuilder
 from src.path_finding.search import aStarSearch
 from src.path_finding.csv_creator import CsvCreatorBuilder
+import pandas as pd
 import time
 import math
 import util
@@ -18,10 +19,10 @@ def find_closest_item(problem, initial_position, visited_positions):
     return closest_item
 
 
-def find_path():
+def find_path(ticket_csv_path):
     before = time.time()
     init_pos = (19, 28)
-    big_problem = Level1ProblemBuilder().build()
+    big_problem = Level1ProblemBuilder(ticket_file_path=ticket_csv_path).build()
     visited_positions = []
     final_solution = []
     for i in range(len(big_problem.ticket_positions)):
@@ -38,5 +39,12 @@ def find_path():
     creator.create_csv()
 
 
+def find_all_tickets_paths():
+    all_tickets = pd.read_csv('data/data/hackathon_tickets.csv', delimiter=';')
+    ticket_ids = all_tickets['ticket_id'].unique()
+    for ticket_id in ticket_ids:
+        find_path(f'{ticket_id}.csv')
+
+
 if __name__ == "__main__":
-    find_path()
+    find_all_tickets_paths()
