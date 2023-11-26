@@ -111,5 +111,18 @@ def separate_tickets_into_different_csv_files():
         ticket.to_csv(f'data/data/tickets/{ticket_id}.csv', index=True, sep=';')
 
 
+def concatenate_tickets():
+    # Concatenate all tickets located in data/results into one csv file
+    all_tickets = pd.read_csv('data/data/hackathon_tickets.csv', delimiter=';')
+    ticket_ids = all_tickets['ticket_id'].unique()
+    concatenated_tickets = pd.DataFrame()
+    for ticket_id in ticket_ids:
+        ticket = pd.read_csv(f'data/results/{ticket_id}_result.csv', delimiter=';')
+        concatenated_tickets = pd.concat([concatenated_tickets, ticket])
+
+    concatenated_tickets.to_csv('data/results/all_tickets.csv', index=False, sep=';')
+
+
 if __name__ == "__main__":
-    separate_tickets_into_different_csv_files()
+    #separate_tickets_into_different_csv_files()
+    concatenate_tickets()
