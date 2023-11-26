@@ -16,7 +16,6 @@ def myHeuristic(state, problem=None):
         if distance < min_distance:
             min_distance = distance
     return min_distance
-    #return 0
 
 
 def aStarSearch(problem, heuristic=myHeuristic):
