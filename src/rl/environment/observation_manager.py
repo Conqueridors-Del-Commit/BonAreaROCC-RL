@@ -11,7 +11,7 @@ class ConvolutionalObservationManager:
 
     def get_observation_space(self):
         return Dict({
-            # 'position': Discrete(self.num_cells),
+            'position': Discrete(self.num_cells),
             'time_per_step': Box(low=0, high=math.inf, shape=(1,)),
             'cells': Box(low=0, high=math.inf, shape=self.cell_shape)
         })
@@ -20,11 +20,11 @@ class ConvolutionalObservationManager:
                         cells: np.ndarray):
         width = cells.shape[1]
         return {
-            # 'position': position_y * width + position_x,
-            # 'position':10,
+            'position': position_y * width + position_x,
             'time_per_step': time_per_step,
             'cells': cells
         }
+
 
 class ObservationManager:
 
@@ -36,6 +36,5 @@ class ObservationManager:
         width = cells.shape[1]
         position = position_y * width + position_x
         time_per_step: time_per_step
-        #obs = np.concatenate([cells.reshape(-1), [position, time_per_step]], dtype=np.float32)
-        obs = cells.reshape(-1)
+        obs = np.concatenate([cells.reshape(-1), [position, time_per_step]], dtype=np.float32)
         return obs

@@ -1,5 +1,6 @@
 import copy
 
+
 from src.rl.environment.observation_manager import ConvolutionalObservationManager, ObservationManager
 from src.rl.environment.reward_manager import RewardManager
 
@@ -215,13 +216,3 @@ if __name__ == "__main__":
         grouping_path='data/data/article_group.json',
         obs_mode=1,
         reward_mode=1).build()
-
-    env.step(1)
-    env.step(1)
-
-    env.step(3)
-    env.step(3)
-    env.step(3)
-    env.step(0)
-
-    env.render()
